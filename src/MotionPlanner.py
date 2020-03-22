@@ -199,12 +199,6 @@ def RRT():
             # ax.plot(Lx,Ly,Lz,c='k')
             plt.plot(Lx,Ly,c='k')
     plt.show()
-
-def heuristic(start,goal):
-    global graph
-    sC = start.Node.coord
-    gC = goal.Node.coord
-    return np.linalg.norm(gC-sC)
     
 def reconstruct_path(current):
     total_path = [current]
