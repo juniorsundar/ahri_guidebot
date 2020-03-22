@@ -40,6 +40,14 @@ class Node:
         bz=newNode.pose.position.z
         return np.linalg.norm(np.array([ax,ay,az])-np.array([bx,by,bz]))
 
+class Vertex:
+    def __init__(self,node):
+        self.f = 0.0
+        self.g = 0.0
+        self.h = 0.0
+        self.previous = 0
+        self.Node = node
+
 def dict_to_array(inputDict):
     array = []
     array.append(inputDict['right_j0'])
@@ -55,7 +63,7 @@ def Nearest(newNode):
     global graph
     closeAngIdx = []
     closeIdx = 0
-    angDist = .5
+    angDist = .6
     euDist = .4
     for i in range(0,len(graph)):
         if graph[i].distanceTo(newNode) < angDist:
@@ -71,15 +79,52 @@ def Exists(newNode):
     global graph
     exists = False
     for nodes in graph:
-        if newNode.distanceTo(nodes) < 0.001:
+        if newNode.distanceTo(nodes) < 0.01:
             exists = True
             break
     return exists
+
+def GenerateRandomNearStart(radius):
+    global workspace
+    global graph
+    global quat
+    global g_limb
+
+    x = (radius-0)*np.random.random_sample()
+    y = (radius-0)*np.random.random_sample()
+    z = (radius-0)*np.random.random_sample()
+
+    tPoint = Point(x,y,z)
+    tPose = Pose()
+
+    tPose.position = copy.deepcopy(tPoint)
+    tPose.orientation = copy.deepcopy(quat)
+    angles_limb = g_limb.ik_request(tPose, "right_hand")
+    while angles_limb is False:
+        x = (radius-0)*np.random.random_sample()
+        y = (radius-0)*np.random.random_sample()
+        z = (radius-0)*np.random.random_sample()
+
+        tPoint = Point(x,y,z)
+        tPose = Pose()
+
+        tPose.position = copy.deepcopy(tPoint)
+        tPose.orientation = copy.deepcopy(quat)
+        angles_limb = g_limb.ik_request(tPose, "right_hand")
+    
+    tNode = Node(tPose,angles_limb)
+
+    if len(graph)>0:
+        while Exists(tNode):
+            tNode = GenerateRandom()
+
+    return tNode
 
 def GenerateRandom():
     global workspace
     global graph
     global quat
+    global g_limb
 
     x = (workspace[0][1]-workspace[0][0])*np.random.random_sample() + workspace[0][0]
     y = (workspace[1][1]-workspace[1][0])*np.random.random_sample() + workspace[1][0]
@@ -113,7 +158,7 @@ def GenerateRandom():
 
 def RRT():
     global graph, quat
-    start_point = Point(0.0,0.0,0.2)
+    start_point = Point(0.0,0.0,0.1)
 
     start = Pose()
     start.position = copy.deepcopy(start_point)
@@ -122,26 +167,115 @@ def RRT():
     target_joint_angles = g_limb.ik_request(start, "right_hand")
     start = Node(start,target_joint_angles)
     graph.append(start)
-    for i in range(0,500):
+    for i in range(0,600):
         XNew = GenerateRandom()
         XNearestIdx = Nearest(XNew)
         graph.append(XNew)
         graph[i+1].Link(XNearestIdx)
         graph[XNearestIdx].Link(i+1)
 
+    graph[0].neighbours = []
+    for i in range(0,len(graph)):
+        if graph[0].eDist(graph[i]) < 0.1:
+            graph[0].Link(i)
+            graph[i].Link(0)
+
+
     fig = plt.figure()
-    ax = fig.gca(projection='3d')
+    # ax = fig.gca(projection='3d')
     for i in range(0,len(graph)):
         if i == 0:
-            ax.scatter(graph[i].pose.position.x,graph[i].pose.position.y,graph[i].pose.position.z,c='g',marker='o')
+            # ax.scatter(graph[i].pose.position.x,graph[i].pose.position.y,graph[i].pose.position.z,c='g',marker='o')
+            plt.scatter(graph[i].pose.position.x,graph[i].pose.position.y,c='g',marker='o')
         else:
-            ax.scatter(graph[i].pose.position.x,graph[i].pose.position.y,graph[i].pose.position.z,c='r',marker='x')
+            # ax.scatter(graph[i].pose.position.x,graph[i].pose.position.y,graph[i].pose.position.z,c='r',marker='x')
+            plt.scatter(graph[i].pose.position.x,graph[i].pose.position.y,c='r',marker='x')
         for j in range(0,len(graph[i].neighbours)):
             Lx = np.array([graph[i].pose.position.x,graph[graph[i].neighbours[j]].pose.position.x])
             Ly = np.array([graph[i].pose.position.y,graph[graph[i].neighbours[j]].pose.position.y])
             Lz = np.array([graph[i].pose.position.z,graph[graph[i].neighbours[j]].pose.position.z])
-            ax.plot(Lx,Ly,Lz,c='k')
+            # ax.plot(Lx,Ly,Lz,c='k')
+            plt.plot(Lx,Ly,c='k')
     plt.show()
+
+def heuristic(start,goal):
+    global graph
+    sC = start.Node.coord
+    gC = goal.Node.coord
+    return np.linalg.norm(gC-sC)
+    
+def reconstruct_path(current):
+    total_path = [current]
+    while total_path[-1] != total_path[-1].previous:
+        current = current.previous
+        total_path.append(current)
+    for i in range(0,len(total_path)):
+        total_path[i] = total_path[i].Node
+    return total_path
+    
+def A_Star(start,goal,Graph):
+    graph2 = []
+    for node in Graph:
+        graph2.append(Vertex(node))
+    
+    openSet = [graph2[start]]
+    closedSet = []
+    
+    openSet[0].f = openSet[0].Node.distanceTo(graph2[goal].Node)
+    openSet[0].previous = openSet[0]
+    
+    while len(openSet)>0:
+        winner = 0
+        
+        for i in range(len(openSet)):
+            if openSet[i].f < openSet[winner].f:
+                winner = i
+        current = openSet[winner]
+        
+        if current == graph2[goal]:
+            return reconstruct_path(current)
+        
+        openSet.pop(winner)
+        closedSet.append(current)
+        
+        for ni in current.Node.neighbours:
+            neighbour = graph2[ni]
+            
+            if neighbour in closedSet:
+                continue
+                
+            tentG = current.g + current.Node.distanceTo(neighbour.Node)
+            
+            if neighbour not in openSet:
+                openSet.append(neighbour)
+            elif tentG >= neighbour.g:
+                continue
+            neighbour.previous = current
+            neighbour.g = tentG
+            neighbour.f = neighbour.g + neighbour.Node.distanceTo(Vertex(graph[goal]).Node)
+                        
+    return "Not Found"       
+
 
 if __name__ == "__main__":
     RRT()
+    A = A_Star(0,300,graph)
+    print(graph[0].pose.position)
+    print(graph[300].pose.position)
+
+    for i in range(0,len(graph)):
+        if i == 0:
+            plt.scatter(graph[i].pose.position.x,graph[i].pose.position.y,c='g',marker='o')
+        else:
+            plt.scatter(graph[i].pose.position.x,graph[i].pose.position.y,c='r',marker='x')
+        for j in range(0,len(graph[i].neighbours)):
+            Lx = np.array([graph[i].pose.position.x,graph[graph[i].neighbours[j]].pose.position.x])
+            Ly = np.array([graph[i].pose.position.y,graph[graph[i].neighbours[j]].pose.position.y])
+            plt.plot(Lx,Ly,c='k')
+    for i in range(1,len(A)):
+        Lx = np.array([A[i-1].pose.position.x,A[i].pose.position.x])
+        Ly = np.array([A[i-1].pose.position.y,A[i].pose.position.y])
+        Lz = np.array([A[i-1].pose.position.z,A[i].pose.position.z])
+        plt.plot(Lx,Ly,c='r')
+
+    plt.show()
