@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from shapely.geometry import Point
 from shapely.geometry.polygon import Polygon
+import os
 
 from geometry_msgs.msg import Pose, Point, Quaternion
 
@@ -136,6 +137,7 @@ def GenerateRandom():
     tPose.position = copy.deepcopy(tPoint)
     tPose.orientation = copy.deepcopy(quat)
     angles_limb = g_limb.ik_request(tPose, "right_hand")
+    
     while angles_limb is False:
         x = (workspace[0][1]-workspace[0][0])*np.random.random_sample() + workspace[0][0]
         y = (workspace[1][1]-workspace[1][0])*np.random.random_sample() + workspace[1][0]
@@ -173,7 +175,7 @@ def RRT():
         graph.append(XNew)
         graph[i+1].Link(XNearestIdx)
         graph[XNearestIdx].Link(i+1)
-
+    os.system('clear')
     graph[0].neighbours = []
     for i in range(0,len(graph)):
         if graph[0].eDist(graph[i]) < 0.1:
@@ -260,7 +262,11 @@ def A_Star(start,goal,Graph):
 if __name__ == "__main__":
     RRT()
     A = A_Star(0,300,graph)
-    print(graph[0].pose.position)
+    i = 0
+    while type(A) == str and i < len(graph[0].neighbours):
+        A = A_Star(graph[0].neighbours[i],300,graph)
+        i+=1
+    print(graph[i].pose.position)
     print(graph[300].pose.position)
 
     for i in range(0,len(graph)):
