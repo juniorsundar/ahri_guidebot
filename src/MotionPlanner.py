@@ -6,8 +6,9 @@ import random
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-from shapely.geometry import Point
+from shapely.geometry import LineString
 from shapely.geometry.polygon import Polygon
+from shapely import affinity
 import os
 
 from geometry_msgs.msg import Pose, Point, Quaternion
@@ -18,6 +19,20 @@ g_limb.set_joint_position_speed(.1)
 workspace = np.array([[0,0.7],[-0.7,0.7],[0,0.2]])
 graph = []
 quat = Quaternion(0.704238785359,0.709956638597,-0.00229009932359,0.00201493272073)
+
+obs_c = np.array([[-0.5,0.25455],[-0.3,0.54091],[0,0.38182],[0.35,0.54091],[0.4,0.25455]])
+obs_w = 0.05
+obs_h = 0.03
+o1 = Polygon([(obs_c[0][0]+obs_w,obs_c[0][1]+obs_h), (obs_c[0][0]+obs_w,obs_c[0][1]-obs_h), (obs_c[0][0]-obs_w,obs_c[0][1]-obs_h), (obs_c[0][0]-obs_w,obs_c[0][1]+obs_h)])
+o2 = Polygon([(obs_c[1][0]+obs_w,obs_c[1][1]+obs_h), (obs_c[1][0]+obs_w,obs_c[1][1]-obs_h), (obs_c[1][0]-obs_w,obs_c[1][1]-obs_h), (obs_c[1][0]-obs_w,obs_c[1][1]+obs_h)])
+o3 = Polygon([(obs_c[2][0]+obs_w,obs_c[2][1]+obs_h), (obs_c[2][0]+obs_w,obs_c[2][1]-obs_h), (obs_c[2][0]-obs_w,obs_c[2][1]-obs_h), (obs_c[2][0]-obs_w,obs_c[2][1]+obs_h)])
+o4 = Polygon([(obs_c[3][0]+obs_w,obs_c[3][1]+obs_h), (obs_c[3][0]+obs_w,obs_c[3][1]-obs_h), (obs_c[3][0]-obs_w,obs_c[3][1]-obs_h), (obs_c[3][0]-obs_w,obs_c[3][1]+obs_h)])
+o5 = Polygon([(obs_c[4][0]+obs_w,obs_c[4][1]+obs_h), (obs_c[4][0]+obs_w,obs_c[4][1]-obs_h), (obs_c[4][0]-obs_w,obs_c[4][1]-obs_h), (obs_c[4][0]-obs_w,obs_c[4][1]+obs_h)])
+
+obstacles = [affinity.scale(o1,yfact=-1,origin=(0,0.35)),affinity.scale(o2,yfact=-1,origin=(0,0.35)),affinity.scale(o3,yfact=-1,origin=(0,0.35)),affinity.scale(o4,yfact=-1,origin=(0,0.35)),affinity.scale(o5,yfact=-1,origin=(0,0.35))]
+##x: 0-28 | y: 0-22
+##x: -0.7-0.7 | y: 0-0.7
+##obs: 1(4,8) | 2(8,17) | 3(14,12) | 4(21,17) | 5(22,8)
 
 class Node:
     def __init__(self,pose,angles):
@@ -80,46 +95,10 @@ def Exists(newNode):
     global graph
     exists = False
     for nodes in graph:
-        if newNode.distanceTo(nodes) < 0.01:
+        if newNode.distanceTo(nodes) < 0.05:
             exists = True
             break
     return exists
-
-def GenerateRandomNearStart(radius):
-    global workspace
-    global graph
-    global quat
-    global g_limb
-
-    x = (radius-0)*np.random.random_sample()
-    y = (radius-0)*np.random.random_sample()
-    z = (radius-0)*np.random.random_sample()
-
-    tPoint = Point(x,y,z)
-    tPose = Pose()
-
-    tPose.position = copy.deepcopy(tPoint)
-    tPose.orientation = copy.deepcopy(quat)
-    angles_limb = g_limb.ik_request(tPose, "right_hand")
-    while angles_limb is False:
-        x = (radius-0)*np.random.random_sample()
-        y = (radius-0)*np.random.random_sample()
-        z = (radius-0)*np.random.random_sample()
-
-        tPoint = Point(x,y,z)
-        tPose = Pose()
-
-        tPose.position = copy.deepcopy(tPoint)
-        tPose.orientation = copy.deepcopy(quat)
-        angles_limb = g_limb.ik_request(tPose, "right_hand")
-    
-    tNode = Node(tPose,angles_limb)
-
-    if len(graph)>0:
-        while Exists(tNode):
-            tNode = GenerateRandom()
-
-    return tNode
 
 def GenerateRandom():
     global workspace
@@ -155,12 +134,42 @@ def GenerateRandom():
     if len(graph)>0:
         while Exists(tNode):
             tNode = GenerateRandom()
-
+    if tNode.eDist(graph[Nearest(tNode)])>0.08 or tNode.eDist(graph[Nearest(tNode)])<0.05:
+        tNode = GenerateRandom()
     return tNode
+
+def isInObstacle(newNode):
+    x = float(newNode.pose.position.y)
+    y = float(newNode.pose.position.x)
+    isIn = False
+    for i in range(0,len(obstacles)):
+        c = affinity.scale(obstacles[i],xfact=1.5,yfact=1.5)
+        c = c.bounds
+        if x > c[0] and x < c[2] and y > c[1] and y < c[3]:
+            isIn = True
+    return isIn
+
+def intersectsObstacle(line):
+    intersects = False
+    lx,ly = line.coords
+    scaledObs = []
+    scaledLine = LineString([(10*lx[0],100*ly[0]),(10*lx[1],100*ly[1])])
+    for c in obstacles:
+        scaledObs.append(affinity.scale(c,xfact=10,yfact=100))
+    for c in scaledObs:
+        y,x = c.exterior.xy
+        ly,lx = scaledLine.coords
+        if scaledLine.intersects(c):
+            plt.plot(x,y)
+            plt.plot(lx,ly)
+            plt.show()
+            intersects = True
+    return intersects
+    
 
 def RRT():
     global graph, quat
-    start_point = Point(0.0,0.0,0.1)
+    start_point = Point(0.7,0.0,0.1)
 
     start = Pose()
     start.position = copy.deepcopy(start_point)
@@ -171,33 +180,35 @@ def RRT():
     graph.append(start)
     for i in range(0,600):
         XNew = GenerateRandom()
+        while isInObstacle(XNew):
+            XNew = GenerateRandom()
         XNearestIdx = Nearest(XNew)
         graph.append(XNew)
         graph[i+1].Link(XNearestIdx)
         graph[XNearestIdx].Link(i+1)
     os.system('clear')
+    for i in range(len(graph[0].neighbours)):
+        graph[graph[0].neighbours[i]].neighbours.pop(0)
     graph[0].neighbours = []
     for i in range(0,len(graph)):
         if graph[0].eDist(graph[i]) < 0.1:
             graph[0].Link(i)
             graph[i].Link(0)
-
-
     fig = plt.figure()
-    # ax = fig.gca(projection='3d')
     for i in range(0,len(graph)):
         if i == 0:
-            # ax.scatter(graph[i].pose.position.x,graph[i].pose.position.y,graph[i].pose.position.z,c='g',marker='o')
             plt.scatter(graph[i].pose.position.x,graph[i].pose.position.y,c='g',marker='o')
         else:
-            # ax.scatter(graph[i].pose.position.x,graph[i].pose.position.y,graph[i].pose.position.z,c='r',marker='x')
             plt.scatter(graph[i].pose.position.x,graph[i].pose.position.y,c='r',marker='x')
         for j in range(0,len(graph[i].neighbours)):
             Lx = np.array([graph[i].pose.position.x,graph[graph[i].neighbours[j]].pose.position.x])
             Ly = np.array([graph[i].pose.position.y,graph[graph[i].neighbours[j]].pose.position.y])
             Lz = np.array([graph[i].pose.position.z,graph[graph[i].neighbours[j]].pose.position.z])
-            # ax.plot(Lx,Ly,Lz,c='k')
             plt.plot(Lx,Ly,c='k')
+        for c in obstacles:
+            y,x = c.exterior.xy
+            plt.plot(x,y)
+
     plt.show()
     
 def reconstruct_path(current):
@@ -227,7 +238,7 @@ def A_Star(start,goal,Graph):
             if openSet[i].f < openSet[winner].f:
                 winner = i
         current = openSet[winner]
-        
+
         if current == graph2[goal]:
             return reconstruct_path(current)
         
@@ -250,32 +261,26 @@ def A_Star(start,goal,Graph):
             neighbour.g = tentG
             neighbour.f = neighbour.g + neighbour.Node.distanceTo(Vertex(graph[goal]).Node)
                         
-    return "Not Found"       
+    return reconstruct_path(current)     
 
 
 if __name__ == "__main__":
     RRT()
-    A = A_Star(0,300,graph)
-    i = 0
-    while type(A) == str and i < len(graph[0].neighbours):
-        A = A_Star(graph[0].neighbours[i],300,graph)
-        i+=1
-    print(graph[i].pose.position)
-    print(graph[300].pose.position)
+    # A = A_Star(0,600,graph)
+    print(graph[600].pose.position)
+    # for i in range(0,len(graph)):
+    #     if i == 0:
+    #         plt.scatter(graph[i].pose.position.x,graph[i].pose.position.y,c='g',marker='o')
+    #     else:
+    #         plt.scatter(graph[i].pose.position.x,graph[i].pose.position.y,c='r',marker='x')
+    #     for j in range(0,len(graph[i].neighbours)):
+    #         Lx = np.array([graph[i].pose.position.x,graph[graph[i].neighbours[j]].pose.position.x])
+    #         Ly = np.array([graph[i].pose.position.y,graph[graph[i].neighbours[j]].pose.position.y])
+    #         plt.plot(Lx,Ly,c='k')
+    # for i in range(1,len(A)):
+    #     Lx = np.array([A[i-1].pose.position.x,A[i].pose.position.x])
+    #     Ly = np.array([A[i-1].pose.position.y,A[i].pose.position.y])
+    #     Lz = np.array([A[i-1].pose.position.z,A[i].pose.position.z])
+    #     plt.plot(Lx,Ly,c='r')
 
-    for i in range(0,len(graph)):
-        if i == 0:
-            plt.scatter(graph[i].pose.position.x,graph[i].pose.position.y,c='g',marker='o')
-        else:
-            plt.scatter(graph[i].pose.position.x,graph[i].pose.position.y,c='r',marker='x')
-        for j in range(0,len(graph[i].neighbours)):
-            Lx = np.array([graph[i].pose.position.x,graph[graph[i].neighbours[j]].pose.position.x])
-            Ly = np.array([graph[i].pose.position.y,graph[graph[i].neighbours[j]].pose.position.y])
-            plt.plot(Lx,Ly,c='k')
-    for i in range(1,len(A)):
-        Lx = np.array([A[i-1].pose.position.x,A[i].pose.position.x])
-        Ly = np.array([A[i-1].pose.position.y,A[i].pose.position.y])
-        Lz = np.array([A[i-1].pose.position.z,A[i].pose.position.z])
-        plt.plot(Lx,Ly,c='r')
-
-    plt.show()
+    # plt.show()
