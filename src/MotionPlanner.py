@@ -25,13 +25,16 @@ start_point_human = Point(0.7,0,0.1)
 obs_c = np.array([[-0.5,0.25455],[-0.3,0.54091],[0,0.38182],[0.35,0.54091],[0.4,0.25455]])
 obs_w = 0.05
 obs_h = 0.03
-o1 = Polygon([(obs_c[0][0]+obs_w,obs_c[0][1]+obs_h), (obs_c[0][0]+obs_w,obs_c[0][1]-obs_h), (obs_c[0][0]-obs_w,obs_c[0][1]-obs_h), (obs_c[0][0]-obs_w,obs_c[0][1]+obs_h)])
-o2 = Polygon([(obs_c[1][0]+obs_w,obs_c[1][1]+obs_h), (obs_c[1][0]+obs_w,obs_c[1][1]-obs_h), (obs_c[1][0]-obs_w,obs_c[1][1]-obs_h), (obs_c[1][0]-obs_w,obs_c[1][1]+obs_h)])
-o3 = Polygon([(obs_c[2][0]+obs_w,obs_c[2][1]+obs_h), (obs_c[2][0]+obs_w,obs_c[2][1]-obs_h), (obs_c[2][0]-obs_w,obs_c[2][1]-obs_h), (obs_c[2][0]-obs_w,obs_c[2][1]+obs_h)])
-o4 = Polygon([(obs_c[3][0]+obs_w,obs_c[3][1]+obs_h), (obs_c[3][0]+obs_w,obs_c[3][1]-obs_h), (obs_c[3][0]-obs_w,obs_c[3][1]-obs_h), (obs_c[3][0]-obs_w,obs_c[3][1]+obs_h)])
-o5 = Polygon([(obs_c[4][0]+obs_w,obs_c[4][1]+obs_h), (obs_c[4][0]+obs_w,obs_c[4][1]-obs_h), (obs_c[4][0]-obs_w,obs_c[4][1]-obs_h), (obs_c[4][0]-obs_w,obs_c[4][1]+obs_h)])
-
-obstacles = [affinity.scale(o1,yfact=-1,origin=(0,0.35)),affinity.scale(o2,yfact=-1,origin=(0,0.35)),affinity.scale(o3,yfact=-1,origin=(0,0.35)),affinity.scale(o4,yfact=-1,origin=(0,0.35)),affinity.scale(o5,yfact=-1,origin=(0,0.35))]
+# o1 = Polygon([(obs_c[0][0]+obs_w,obs_c[0][1]+obs_h), (obs_c[0][0]+obs_w,obs_c[0][1]-obs_h), (obs_c[0][0]-obs_w,obs_c[0][1]-obs_h), (obs_c[0][0]-obs_w,obs_c[0][1]+obs_h)])
+# o2 = Polygon([(obs_c[1][0]+obs_w,obs_c[1][1]+obs_h), (obs_c[1][0]+obs_w,obs_c[1][1]-obs_h), (obs_c[1][0]-obs_w,obs_c[1][1]-obs_h), (obs_c[1][0]-obs_w,obs_c[1][1]+obs_h)])
+# o3 = Polygon([(obs_c[2][0]+obs_w,obs_c[2][1]+obs_h), (obs_c[2][0]+obs_w,obs_c[2][1]-obs_h), (obs_c[2][0]-obs_w,obs_c[2][1]-obs_h), (obs_c[2][0]-obs_w,obs_c[2][1]+obs_h)])
+# o4 = Polygon([(obs_c[3][0]+obs_w,obs_c[3][1]+obs_h), (obs_c[3][0]+obs_w,obs_c[3][1]-obs_h), (obs_c[3][0]-obs_w,obs_c[3][1]-obs_h), (obs_c[3][0]-obs_w,obs_c[3][1]+obs_h)])
+# o5 = Polygon([(obs_c[4][0]+obs_w,obs_c[4][1]+obs_h), (obs_c[4][0]+obs_w,obs_c[4][1]-obs_h), (obs_c[4][0]-obs_w,obs_c[4][1]-obs_h), (obs_c[4][0]-obs_w,obs_c[4][1]+obs_h)])
+#.45 .2  .2 -.5
+o = Polygon([(0.3,0.3), (0.3,0.4), (0.1,0.4), (0.1,0.3)])
+o1 = Polygon([(-0.3,0.3), (-0.3,0.4), (-0.1,0.4), (-0.1,0.3)])
+# obstacles = [affinity.scale(o1,yfact=-1,origin=(0,0.35)),affinity.scale(o2,yfact=-1,origin=(0,0.35)),affinity.scale(o3,yfact=-1,origin=(0,0.35)),affinity.scale(o4,yfact=-1,origin=(0,0.35)),affinity.scale(o5,yfact=-1,origin=(0,0.35))]
+obstacles = [affinity.scale(o,yfact=-1,origin=(0,0.35)),affinity.scale(o1,yfact=-1,origin=(0,0.35))]
 ##x: 0-28 | y: 0-22
 ##x: -0.7-0.7 | y: 0-0.7
 ##obs: 1(4,8) | 2(8,17) | 3(14,12) | 4(21,17) | 5(22,8)
@@ -266,16 +269,17 @@ def A_Star(start,goal):
         for ni in current.Node.neighbours:
             neighbour = graph2[ni]
 
-            tentG = current.g + current.Node.eDist(neighbour.Node) + humanCost(current,neighbour)
+            tentG = current.g + current.Node.eDist(neighbour.Node) 
+            # + humanCost(current,neighbour)
             
             if tentG < neighbour.g:
                 neighbour.previous = current
                 neighbour.g = tentG
-                neighbour.f = neighbour.g +  + current.Node.eDist(graph2[goal].Node)
+                neighbour.f = neighbour.g + 3*current.Node.eDist(graph2[goal].Node)
                 if neighbour not in closedSet:
                     openSet.append(neighbour)
-    return "No Path"                  
-    # return reconstruct_path(current)     
+    # return "No Path"                  
+    return reconstruct_path(current)     
 
 def findClosest(check):
     global graph
