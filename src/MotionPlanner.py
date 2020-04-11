@@ -4,7 +4,9 @@ import rospy
 import copy 
 import random
 import numpy as np
-import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use('Agg')
+from matplotlib import pyplot as plt
 from shapely.geometry import LineString
 from shapely.geometry import Polygon
 from shapely.geometry import Point as Points
@@ -16,7 +18,7 @@ from geometry_msgs.msg import Pose, Point, Quaternion
 rospy.init_node('MotionPlanner')
 g_limb = intera_interface.Limb('right')
 g_limb.set_joint_position_speed(.1)
-workspace = np.array([[0,0.7],[-0.7,0.7],[0,0.2]])
+workspace = np.array([[0,0.7],[-0.7,0.7],[0,0.1]])
 graph = []
 quat = Quaternion(0.704238785359,0.709956638597,-0.00229009932359,0.00201493272073)
 start_point_robot = Point(0.0,0.0,0.1)
@@ -85,12 +87,12 @@ def Nearest(newNode):
     closeAngIdx = []
     closeIdx = 0
     angDist = .6
-    euDist = .4
+    euDist = .3
     for i in range(0,len(graph)):
         if graph[i].distanceTo(newNode) < angDist:
             angDist = graph[i].distanceTo(newNode)
             closeAngIdx.append(i)
-    for i in range(0,len(graph)):
+    for i in closeAngIdx:
         if graph[i].eDist(newNode) < euDist:
             euDist = graph[i].eDist(newNode)
             closeIdx = i
@@ -168,14 +170,14 @@ def safeForHuman(index):
 
 def humanCost(current, neighbour):
     global graph, start_point_human, obstacles
-    cost = 0
+    cost = False
     p3 = Points(start_point_human.y,start_point_human.x)
     p1 = Points(current.Node.pose.position.y,current.Node.pose.position.x)
     p2 = Points(neighbour.Node.pose.position.y,neighbour.Node.pose.position.x)
     poly = Polygon([p1,p2,p3])
     for k in obstacles:
         if k.intersects(poly):
-            cost = 100
+            cost = True
     return cost
 
 def RRT():
@@ -196,6 +198,7 @@ def RRT():
         graph.append(XNew)
         graph[i+1].Link(XNearestIdx)
         graph[XNearestIdx].Link(i+1)
+        print(i)
     os.system('clear')
 
     #clear starting point neighbours to remove huge jumps
@@ -241,9 +244,10 @@ def A_Star(start,goal):
     graph2 = []
     for node in graph:
         graph2.append(Vertex(node))
-    
-    for i in range(len(graph2)):
-        graph2[i].g = 100
+
+    for i in range(0,len(graph2)):
+        graph2[i].f = 1000
+        graph2[i].g = 1000
 
     openSet = [graph2[start]]
     closedSet = []
@@ -270,16 +274,16 @@ def A_Star(start,goal):
             neighbour = graph2[ni]
 
             tentG = current.g + current.Node.eDist(neighbour.Node) 
-            # + humanCost(current,neighbour)
-            
-            if tentG < neighbour.g:
-                neighbour.previous = current
-                neighbour.g = tentG
-                neighbour.f = neighbour.g + 3*current.Node.eDist(graph2[goal].Node)
-                if neighbour not in closedSet:
-                    openSet.append(neighbour)
-    # return "No Path"                  
-    return reconstruct_path(current)     
+            #  + humanCost(current,neighbour)
+            if not humanCost(current, neighbour):
+                if tentG < neighbour.g:
+                    neighbour.previous = current
+                    neighbour.g = tentG
+                    neighbour.f = neighbour.g + current.Node.eDist(graph2[goal].Node)
+                    if neighbour not in openSet:
+                        openSet.append(neighbour)
+    return "No Path"                  
+    # return reconstruct_path(current)     
 
 def findClosest(check):
     global graph
@@ -311,6 +315,7 @@ if __name__ == "__main__":
         print(si, ei)
         A = A_Star(si,ei)
         if (type(A) is not str):
+            fig = plt.figure()
             for i in range(0,len(graph)):
                 if i == 0:
                     plt.scatter(graph[i].pose.position.x,graph[i].pose.position.y,c='g',marker='o')
@@ -330,3 +335,4 @@ if __name__ == "__main__":
                 plt.plot(x,y)
 
             plt.show()
+            fig.savefig('plot.png')
