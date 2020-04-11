@@ -282,8 +282,12 @@ def A_Star(start,goal):
                     neighbour.f = neighbour.g + current.Node.eDist(graph2[goal].Node)
                     if neighbour not in openSet:
                         openSet.append(neighbour)
-    return "No Path"                  
-    # return reconstruct_path(current)     
+    # return "No Path"
+    closest = closedSet[-1]
+    for i in range(0,len(closedSet)):
+        if closedSet[i].Node.eDist(graph2[goal].Node)<closest.Node.eDist(graph2[goal].Node):
+            closest = closedSet[i]
+    return reconstruct_path(closest)     
 
 def findClosest(check):
     global graph
