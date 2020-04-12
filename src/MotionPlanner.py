@@ -44,6 +44,7 @@ obstacles = [affinity.scale(o,yfact=-1,origin=(0,0.35)),affinity.scale(o1,yfact=
 class Node:
     def __init__(self,pose,angles):
         self.pose = pose
+        self.angles = angles
         self.jointAngles = dict_to_array(angles)
         self.neighbours = []
         self.weight = []
@@ -190,7 +191,7 @@ def RRT():
     target_joint_angles = g_limb.ik_request(start, "right_hand")
     start = Node(start,target_joint_angles)
     graph.append(start)
-    for i in range(0,700):
+    for i in range(0,1000):
         XNew = GenerateRandom()
         while isInObstacle(XNew):
             XNew = GenerateRandom()
@@ -319,6 +320,12 @@ if __name__ == "__main__":
         print(si, ei)
         A = A_Star(si,ei)
         if (type(A) is not str):
+            # Set the robot speed (takes a value between 0 and 1)
+            g_limb.set_joint_position_speed(.1)
+
+            # Send the robot arm to the joint angles in target_joint_angles, wait up to 2 seconds to finish
+            for j in reversed(A):
+                g_limb.move_to_joint_positions(j.angles, timeout=2)
             fig = plt.figure()
             for i in range(0,len(graph)):
                 if i == 0:
