@@ -41,7 +41,7 @@ def intersects(point):
             output = True
     return output
 
-def callback(data)
+def callback(data):
     if intersects(data):
         publishing = Coordinates()
         publishing.start_point = data

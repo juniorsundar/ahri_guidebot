@@ -24,6 +24,8 @@ quat = Quaternion(0.704238785359,0.709956638597,-0.00229009932359,0.002014932720
 start_point_robot = Point(0.0,0.0,0.1)
 start_point_human = Point(0.7,0,0.1)
 
+x = False #THIS VARIABLE DETERMINES IF A PLOT SHOULD ME MADE. IF TRUE THEN IT WILL USE A LOT OF COMPUTATION TIME SO ACTIVATE AT YOUR OWN RISK
+
 obs_c = np.array([[-0.5,0.25455],[-0.3,0.54091],[0,0.38182],[0.35,0.54091],[0.4,0.25455]])
 obs_w = 0.05
 obs_h = 0.03
@@ -90,7 +92,7 @@ def Nearest(newNode,NodeIndex):
     angDist = .6
     euDist = .1
     for i in range(1,len(graph)):
-        if i != NodeIndex and i not in graph[NodeIndex].neighbours and len(graph[NodeIndex].neighbours) < 3:
+        if i != NodeIndex and i not in graph[NodeIndex].neighbours and len(graph[NodeIndex].neighbours) < 5:
             if graph[i].eDist(newNode) < euDist:
                 # angDist = graph[i].distanceTo(newNode)
                 closeIdx.append(i)
@@ -166,7 +168,8 @@ def humanCost(current, neighbour):
     p2 = Points(neighbour.Node.pose.position.y,neighbour.Node.pose.position.x)
     poly = Polygon([p1,p2,p3])
     for k in obstacles:
-        if k.intersects(poly):
+        c = affinity.scale(k,xfact=1.5,yfact=1.5)
+        if c.intersects(poly):
             cost = True
     return cost
 
@@ -192,23 +195,24 @@ def RRT():
             graph[j].Link(i)
     os.system('clear')
 
-    fig = plt.figure()
-    for i in range(len(graph)):
-        if i == 0:
-            plt.scatter(graph[i].pose.position.x,graph[i].pose.position.y,c='g',marker='o')
-        else:
-            plt.scatter(graph[i].pose.position.x,graph[i].pose.position.y,c='r',marker='x')
-        for j in range(len(graph[i].neighbours)):
-            # print j
-            Lx = np.array([graph[i].pose.position.x,graph[graph[i].neighbours[j]].pose.position.x])
-            Ly = np.array([graph[i].pose.position.y,graph[graph[i].neighbours[j]].pose.position.y])
-            Lz = np.array([graph[i].pose.position.z,graph[graph[i].neighbours[j]].pose.position.z])
-            plt.plot(Lx,Ly,c='k')
-        for c in obstacles:
-            y,x = c.exterior.xy
-            plt.plot(x,y)
-    fig.savefig('src/ahri_guidebot/plot.png')
-    plt.show()
+    if x:
+        fig = plt.figure()
+        for i in range(len(graph)):
+            if i == 0:
+                plt.scatter(graph[i].pose.position.x,graph[i].pose.position.y,c='g',marker='o')
+            else:
+                plt.scatter(graph[i].pose.position.x,graph[i].pose.position.y,c='r',marker='x')
+            for j in range(len(graph[i].neighbours)):
+                # print j
+                Lx = np.array([graph[i].pose.position.x,graph[graph[i].neighbours[j]].pose.position.x])
+                Ly = np.array([graph[i].pose.position.y,graph[graph[i].neighbours[j]].pose.position.y])
+                Lz = np.array([graph[i].pose.position.z,graph[graph[i].neighbours[j]].pose.position.z])
+                plt.plot(Lx,Ly,c='k')
+            for c in obstacles:
+                y,x = c.exterior.xy
+                plt.plot(x,y)
+        fig.savefig('src/ahri_guidebot/plot.png')
+        plt.show()
     
 def reconstruct_path(current):
     total_path = [current]
@@ -297,26 +301,27 @@ def callback(data):
         # Send the robot arm to the joint angles in target_joint_angles, wait up to 2 seconds to finish
         for j in reversed(A):
             g_limb.move_to_joint_positions(j.angles, timeout=2)
-        fig = plt.figure()
-        for i in range(0,len(graph)):
-            if i == 0:
-                plt.scatter(graph[i].pose.position.x,graph[i].pose.position.y,c='g',marker='o')
-            else:
-                plt.scatter(graph[i].pose.position.x,graph[i].pose.position.y,c='r',marker='x')
-            for j in range(0,len(graph[i].neighbours)):
-                Lx = np.array([graph[i].pose.position.x,graph[graph[i].neighbours[j]].pose.position.x])
-                Ly = np.array([graph[i].pose.position.y,graph[graph[i].neighbours[j]].pose.position.y])
-                plt.plot(Lx,Ly,c='k')
-        for i in range(1,len(A)):
-            Lx = np.array([A[i-1].pose.position.x,A[i].pose.position.x])
-            Ly = np.array([A[i-1].pose.position.y,A[i].pose.position.y])
-            Lz = np.array([A[i-1].pose.position.z,A[i].pose.position.z])
-            plt.plot(Lx,Ly,c='r')
-        for c in obstacles:
-            y,x = c.exterior.xy
-            plt.plot(x,y)
-        plt.show()
-        fig.savefig('src/ahri_guidebot/plot.png')
+        if x:
+            fig = plt.figure()
+            for i in range(0,len(graph)):
+                if i == 0:
+                    plt.scatter(graph[i].pose.position.x,graph[i].pose.position.y,c='g',marker='o')
+                else:
+                    plt.scatter(graph[i].pose.position.x,graph[i].pose.position.y,c='r',marker='x')
+                for j in range(0,len(graph[i].neighbours)):
+                    Lx = np.array([graph[i].pose.position.x,graph[graph[i].neighbours[j]].pose.position.x])
+                    Ly = np.array([graph[i].pose.position.y,graph[graph[i].neighbours[j]].pose.position.y])
+                    plt.plot(Lx,Ly,c='k')
+            for i in range(1,len(A)):
+                Lx = np.array([A[i-1].pose.position.x,A[i].pose.position.x])
+                Ly = np.array([A[i-1].pose.position.y,A[i].pose.position.y])
+                Lz = np.array([A[i-1].pose.position.z,A[i].pose.position.z])
+                plt.plot(Lx,Ly,c='r')
+            for c in obstacles:
+                y,x = c.exterior.xy
+                plt.plot(x,y)
+            plt.show()
+            fig.savefig('src/ahri_guidebot/plot.png')
         rospy.loginfo('Node is now accepting coordinates')
 
 def main():
