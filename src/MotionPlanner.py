@@ -12,6 +12,7 @@ from shapely.geometry import Polygon
 from shapely.geometry import Point as Points
 from shapely import affinity
 import os
+import json
 
 from geometry_msgs.msg import Pose, Point, Quaternion
 
@@ -83,21 +84,22 @@ def dict_to_array(inputDict):
     array.append(inputDict['right_j6'])
     return np.asarray(array)
 
-def Nearest(newNode):
+def Nearest(newNode,NodeIndex):
     global graph
     closeAngIdx = []
-    closeIdx = 0
+    closeIdx = []
     angDist = .6
-    euDist = .3
-    for i in range(0,len(graph)):
+    euDist = .1
+    for i in range(1,len(graph)):
+        if i != NodeIndex and i not in graph[NodeIndex].neighbours and len(graph[NodeIndex].neighbours) < 3:
+            if graph[i].eDist(newNode) < euDist:
+                # angDist = graph[i].distanceTo(newNode)
+                closeIdx.append(i)
+    for i in closeIdx:
         if graph[i].distanceTo(newNode) < angDist:
-            angDist = graph[i].distanceTo(newNode)
+            # euDist = graph[i].eDist(newNode)
             closeAngIdx.append(i)
-    for i in closeAngIdx:
-        if graph[i].eDist(newNode) < euDist:
-            euDist = graph[i].eDist(newNode)
-            closeIdx = i
-    return closeIdx
+    return closeAngIdx
 
 def Exists(newNode):
     global graph
@@ -142,8 +144,8 @@ def GenerateRandom():
     if len(graph)>0:
         while Exists(tNode):
             tNode = GenerateRandom()
-    if tNode.eDist(graph[Nearest(tNode)])>0.08 or tNode.eDist(graph[Nearest(tNode)])<0.05:
-        tNode = GenerateRandom()
+    # if tNode.eDist(graph[Nearest(tNode)])>0.09 or tNode.eDist(graph[Nearest(tNode)])<0.04:
+    #     tNode = GenerateRandom()
     return tNode
 
 def isInObstacle(newNode):
@@ -156,18 +158,6 @@ def isInObstacle(newNode):
         if x > c[0] and x < c[2] and y > c[1] and y < c[3]:
             isIn = True
     return isIn
-    
-def safeForHuman(index):
-    global graph, start_point_human, obstacles
-    p3 = Points(start_point_human.y,start_point_human.x)
-    for i in reversed(range(len(graph[index].neighbours))):
-        neighbour = graph[graph[index].neighbours[i]]
-        p1 = Points(graph[index].pose.position.y,graph[index].pose.position.x)
-        p2 = Points(neighbour.pose.position.y,neighbour.pose.position.x)
-        poly = Polygon([p1,p2,p3])
-        for k in obstacles:
-            if k.intersects(poly):
-                graph[index].neighbours.pop(i)
 
 def humanCost(current, neighbour):
     global graph, start_point_human, obstacles
@@ -195,23 +185,13 @@ def RRT():
         XNew = GenerateRandom()
         while isInObstacle(XNew):
             XNew = GenerateRandom()
-        XNearestIdx = Nearest(XNew)
         graph.append(XNew)
-        graph[i+1].Link(XNearestIdx)
-        graph[XNearestIdx].Link(i+1)
-        print(i)
-    os.system('clear')
-
-    #clear starting point neighbours to remove huge jumps
-    for i in range(len(graph[0].neighbours)):
-        graph[graph[0].neighbours[i]].neighbours.pop(0)
-    graph[0].neighbours = []
-
-
     for i in range(len(graph)):
-        if graph[0].eDist(graph[i]) < 0.1:
-            graph[0].Link(i)
-            graph[i].Link(0)
+        XNearestIdx = Nearest(graph[i],i)
+        for j in XNearestIdx:
+            graph[i].Link(j)
+            graph[j].Link(i)
+    os.system('clear')
 
     fig = plt.figure()
     for i in range(len(graph)):
