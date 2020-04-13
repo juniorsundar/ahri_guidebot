@@ -7,12 +7,10 @@ import numpy as np
 import matplotlib
 matplotlib.use('Agg')
 from matplotlib import pyplot as plt
-from shapely.geometry import LineString
-from shapely.geometry import Polygon
+from shapely.geometry import LineString, Polygon
 from shapely.geometry import Point as Points
 from shapely import affinity
 import os
-import json
 
 from geometry_msgs.msg import Pose, Point, Quaternion
 from ahri_guidebot.msg import Coordinates
@@ -182,7 +180,7 @@ def RRT():
     target_joint_angles = g_limb.ik_request(start, "right_hand")
     start = Node(start,target_joint_angles)
     graph.append(start)
-    for i in range(0,1000):
+    for i in range(0,1200):
         XNew = GenerateRandom()
         while isInObstacle(XNew):
             XNew = GenerateRandom()
@@ -209,7 +207,7 @@ def RRT():
         for c in obstacles:
             y,x = c.exterior.xy
             plt.plot(x,y)
-    fig.savefig('plot.png')
+    fig.savefig('src/ahri_guidebot/plot.png')
     plt.show()
     
 def reconstruct_path(current):
@@ -318,14 +316,14 @@ def callback(data):
             y,x = c.exterior.xy
             plt.plot(x,y)
         plt.show()
-        fig.savefig('plot.png')
-
+        fig.savefig('src/ahri_guidebot/plot.png')
+        rospy.loginfo('Node is now accepting coordinates')
 
 def main():
     RRT()
+    rospy.loginfo('Node is now accepting coordinates')
     rospy.Subscriber("waypoint",Coordinates,callback)
     rospy.spin()
-
 
 if __name__ == "__main__":
     main()
