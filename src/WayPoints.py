@@ -16,7 +16,6 @@ from ahri_guidebot.msg import Coordinates
 rospy.init_node('WayPoints',anonymous=True)
 pub = rospy.Publisher('waypoint',Coordinates,queue_size=10)
 workspace = np.array([[0,0.7],[-0.7,0.7],[0,0.2]])
-(0.704238785359,0.709956638597,-0.00229009932359,0.00201493272073)
 start_point_robot = Point(0.0,0.0,0.1)
 start_point_human = Point(0.7,0,0.1)
 end_point_human = Point()
