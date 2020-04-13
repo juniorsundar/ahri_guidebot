@@ -10,6 +10,7 @@ from shapely.geometry import Point as Points
 from shapely import affinity
 import os
 from geometry_msgs.msg import Pose, Point, Quaternion
+import Coordinates.msg
 
 rospy.init_node('WayPoints')
 workspace = np.array([[0,0.7],[-0.7,0.7],[0,0.2]])

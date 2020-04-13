@@ -15,8 +15,9 @@ import os
 import json
 
 from geometry_msgs.msg import Pose, Point, Quaternion
+from ahri_guidebot.msg import Coordinates
 
-rospy.init_node('MotionPlanner')
+rospy.init_node('MotionPlanner',anonymous=True)
 g_limb = intera_interface.Limb('right')
 g_limb.set_joint_position_speed(.1)
 workspace = np.array([[0,0.7],[-0.7,0.7],[0,0.1]])
@@ -286,44 +287,54 @@ def findClosest(check):
             dist = nuDist
             closestIndex = i
     return closestIndex
-    
+
+def callback(data):
+    si = findClosest(data.start_point)
+    ei = findClosest(data.end_point)
+    print(si, ei)
+    A = A_Star(si,ei)
+    if (type(A) is not str):
+        # Set the robot speed (takes a value between 0 and 1)
+        g_limb.set_joint_position_speed(.1)
+        # Send the robot arm to the joint angles in target_joint_angles, wait up to 2 seconds to finish
+        for j in reversed(A):
+            g_limb.move_to_joint_positions(j.angles, timeout=2)
+        fig = plt.figure()
+        for i in range(0,len(graph)):
+            if i == 0:
+                plt.scatter(graph[i].pose.position.x,graph[i].pose.position.y,c='g',marker='o')
+            else:
+                plt.scatter(graph[i].pose.position.x,graph[i].pose.position.y,c='r',marker='x')
+            for j in range(0,len(graph[i].neighbours)):
+                Lx = np.array([graph[i].pose.position.x,graph[graph[i].neighbours[j]].pose.position.x])
+                Ly = np.array([graph[i].pose.position.y,graph[graph[i].neighbours[j]].pose.position.y])
+                plt.plot(Lx,Ly,c='k')
+        for i in range(1,len(A)):
+            Lx = np.array([A[i-1].pose.position.x,A[i].pose.position.x])
+            Ly = np.array([A[i-1].pose.position.y,A[i].pose.position.y])
+            Lz = np.array([A[i-1].pose.position.z,A[i].pose.position.z])
+            plt.plot(Lx,Ly,c='r')
+        for c in obstacles:
+            y,x = c.exterior.xy
+            plt.plot(x,y)
+        plt.show()
+        fig.savefig('plot.png')
+
+
+def main():
+    RRT()
+    rospy.Subscriber("waypoint",Coordinates,callback)
+    rospy.spin()
+
 
 if __name__ == "__main__":
-    RRT()
-    while True:
-        print 'Start'
-        starting = Point(float(raw_input('x: ')),float(raw_input('y: ')),float(raw_input('z: ')))
-        print 'Ending'
-        ending = Point(float(raw_input('x: ')),float(raw_input('y: ')),float(raw_input('z: ')))
-        si = findClosest(starting)
-        ei = findClosest(ending)
-        print(si, ei)
-        A = A_Star(si,ei)
-        if (type(A) is not str):
-            # Set the robot speed (takes a value between 0 and 1)
-            g_limb.set_joint_position_speed(.1)
+    main()
 
-            # Send the robot arm to the joint angles in target_joint_angles, wait up to 2 seconds to finish
-            for j in reversed(A):
-                g_limb.move_to_joint_positions(j.angles, timeout=2)
-            fig = plt.figure()
-            for i in range(0,len(graph)):
-                if i == 0:
-                    plt.scatter(graph[i].pose.position.x,graph[i].pose.position.y,c='g',marker='o')
-                else:
-                    plt.scatter(graph[i].pose.position.x,graph[i].pose.position.y,c='r',marker='x')
-                for j in range(0,len(graph[i].neighbours)):
-                    Lx = np.array([graph[i].pose.position.x,graph[graph[i].neighbours[j]].pose.position.x])
-                    Ly = np.array([graph[i].pose.position.y,graph[graph[i].neighbours[j]].pose.position.y])
-                    plt.plot(Lx,Ly,c='k')
-            for i in range(1,len(A)):
-                Lx = np.array([A[i-1].pose.position.x,A[i].pose.position.x])
-                Ly = np.array([A[i-1].pose.position.y,A[i].pose.position.y])
-                Lz = np.array([A[i-1].pose.position.z,A[i].pose.position.z])
-                plt.plot(Lx,Ly,c='r')
-            for c in obstacles:
-                y,x = c.exterior.xy
-                plt.plot(x,y)
-
-            plt.show()
-            fig.savefig('plot.png')
+    # RRT()
+    # while True:
+        # print 'Start'
+        # starting = Point(float(raw_input('x: ')),float(raw_input('y: ')),float(raw_input('z: ')))
+        # print 'Ending'
+        # ending = Point(float(raw_input('x: ')),float(raw_input('y: ')),float(raw_input('z: ')))
+        # si = findClosest(starting)
+        # ei = findClosest(ending)
