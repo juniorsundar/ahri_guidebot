@@ -173,7 +173,7 @@ def humanCost(current, neighbour):
             cost = True
     return cost
 
-def RRT():
+def RRT(): #more like PRM
     global graph, quat, start_point_robot
 
     start = Pose()
@@ -194,7 +194,7 @@ def RRT():
             graph[i].Link(j)
             graph[j].Link(i)
     os.system('clear')
-
+    global x
     if x:
         fig = plt.figure()
         for i in range(len(graph)):
@@ -296,22 +296,20 @@ def callback(data):
     print(si, ei)
     A = A_Star(si,ei)
     if (type(A) is not str):
-        # Set the robot speed (takes a value between 0 and 1)
         g_limb.set_joint_position_speed(.1)
-        # Send the robot arm to the joint angles in target_joint_angles, wait up to 2 seconds to finish
         for j in reversed(A):
             g_limb.move_to_joint_positions(j.angles, timeout=2)
-        if x:
+        if True:
             fig = plt.figure()
-            for i in range(0,len(graph)):
-                if i == 0:
-                    plt.scatter(graph[i].pose.position.x,graph[i].pose.position.y,c='g',marker='o')
-                else:
-                    plt.scatter(graph[i].pose.position.x,graph[i].pose.position.y,c='r',marker='x')
-                for j in range(0,len(graph[i].neighbours)):
-                    Lx = np.array([graph[i].pose.position.x,graph[graph[i].neighbours[j]].pose.position.x])
-                    Ly = np.array([graph[i].pose.position.y,graph[graph[i].neighbours[j]].pose.position.y])
-                    plt.plot(Lx,Ly,c='k')
+            # for i in range(0,len(graph)):
+            #     if i == 0:
+            #         plt.scatter(graph[i].pose.position.x,graph[i].pose.position.y,c='g',marker='o')
+            #     else:
+            #         plt.scatter(graph[i].pose.position.x,graph[i].pose.position.y,c='r',marker='x')
+            #     for j in range(0,len(graph[i].neighbours)):
+            #         Lx = np.array([graph[i].pose.position.x,graph[graph[i].neighbours[j]].pose.position.x])
+            #         Ly = np.array([graph[i].pose.position.y,graph[graph[i].neighbours[j]].pose.position.y])
+            #         plt.plot(Lx,Ly,c='k')
             for i in range(1,len(A)):
                 Lx = np.array([A[i-1].pose.position.x,A[i].pose.position.x])
                 Ly = np.array([A[i-1].pose.position.y,A[i].pose.position.y])
