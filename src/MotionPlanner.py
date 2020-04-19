@@ -11,11 +11,12 @@ from shapely.geometry import LineString, Polygon
 from shapely.geometry import Point as Points
 from shapely import affinity
 import os
+import datetime
 
 from geometry_msgs.msg import Pose, Point, Quaternion
 from ahri_guidebot.msg import Coordinates
 
-rospy.init_node('MotionPlanner',anonymous=True)
+rospy.init_node('MotionPlanner',anonymous=False)
 g_limb = intera_interface.Limb('right')
 g_limb.set_joint_position_speed(.1)
 workspace = np.array([[0,0.7],[-0.7,0.7],[0,0.1]])
@@ -24,7 +25,7 @@ quat = Quaternion(0.704238785359,0.709956638597,-0.00229009932359,0.002014932720
 start_point_robot = Point(0.0,0.0,0.1)
 start_point_human = Point(0.7,0,0.1)
 
-x = False #THIS VARIABLE DETERMINES IF A PLOT SHOULD ME MADE. IF TRUE THEN IT WILL USE A LOT OF COMPUTATION TIME SO ACTIVATE AT YOUR OWN RISK
+x = False #THIS VARIABLE DETERMINES IF A PLOT SHOULD BE MADE. IF TRUE THEN IT WILL USE A LOT OF COMPUTATION TIME SO ACTIVATE AT YOUR OWN RISK
 
 obs_c = np.array([[-0.5,0.25455],[-0.3,0.54091],[0,0.38182],[0.35,0.54091],[0.4,0.25455]])
 obs_w = 0.05
@@ -145,8 +146,6 @@ def GenerateRandom():
     if len(graph)>0:
         while Exists(tNode):
             tNode = GenerateRandom()
-    # if tNode.eDist(graph[Nearest(tNode)])>0.09 or tNode.eDist(graph[Nearest(tNode)])<0.04:
-    #     tNode = GenerateRandom()
     return tNode
 
 def isInObstacle(newNode):
@@ -183,7 +182,7 @@ def RRT(): #more like PRM
     target_joint_angles = g_limb.ik_request(start, "right_hand")
     start = Node(start,target_joint_angles)
     graph.append(start)
-    for i in range(0,1200):
+    for i in range(0,2000):
         XNew = GenerateRandom()
         while isInObstacle(XNew):
             XNew = GenerateRandom()
@@ -203,7 +202,6 @@ def RRT(): #more like PRM
             else:
                 plt.scatter(graph[i].pose.position.x,graph[i].pose.position.y,c='r',marker='x')
             for j in range(len(graph[i].neighbours)):
-                # print j
                 Lx = np.array([graph[i].pose.position.x,graph[graph[i].neighbours[j]].pose.position.x])
                 Ly = np.array([graph[i].pose.position.y,graph[graph[i].neighbours[j]].pose.position.y])
                 Lz = np.array([graph[i].pose.position.z,graph[graph[i].neighbours[j]].pose.position.z])
@@ -258,7 +256,6 @@ def A_Star(start,goal):
             neighbour = graph2[ni]
 
             tentG = current.g + current.Node.eDist(neighbour.Node) 
-            #  + humanCost(current,neighbour)
             if not humanCost(current, neighbour):
                 if tentG < neighbour.g:
                     neighbour.previous = current
@@ -266,7 +263,6 @@ def A_Star(start,goal):
                     neighbour.f = neighbour.g + current.Node.eDist(graph2[goal].Node)
                     if neighbour not in openSet:
                         openSet.append(neighbour)
-    # return "No Path"
     closest = closedSet[-1]
     for i in range(0,len(closedSet)):
         if closedSet[i].Node.eDist(graph2[goal].Node)<closest.Node.eDist(graph2[goal].Node):
@@ -297,8 +293,11 @@ def callback(data):
     A = A_Star(si,ei)
     if (type(A) is not str):
         g_limb.set_joint_position_speed(.1)
+        a = datetime.datetime.now()
         for j in reversed(A):
             g_limb.move_to_joint_positions(j.angles, timeout=2)
+        b = datetime.datetime.now()
+        print(b-a)
         if True:
             fig = plt.figure()
             # for i in range(0,len(graph)):
@@ -318,6 +317,7 @@ def callback(data):
             for c in obstacles:
                 y,x = c.exterior.xy
                 plt.plot(x,y)
+            plt.axis([0, 0.7, -0.7, 0.7])
             plt.show()
             fig.savefig('src/ahri_guidebot/plot.png')
         rospy.loginfo('Node is now accepting coordinates')
@@ -330,12 +330,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-    # RRT()
-    # while True:
-        # print 'Start'
-        # starting = Point(float(raw_input('x: ')),float(raw_input('y: ')),float(raw_input('z: ')))
-        # print 'Ending'
-        # ending = Point(float(raw_input('x: ')),float(raw_input('y: ')),float(raw_input('z: ')))
-        # si = findClosest(starting)
-        # ei = findClosest(ending)

@@ -27,29 +27,17 @@ obs_h = 0.03
 o = Polygon([(0.3,0.3), (0.3,0.4), (0.1,0.4), (0.1,0.3)])
 o1 = Polygon([(-0.3,0.3), (-0.3,0.4), (-0.1,0.4), (-0.1,0.3)])
 obstacles = [affinity.scale(o,yfact=-2,origin=(0,0.35)),affinity.scale(o1,yfact=-2,origin=(0,0.35))]
-obstacles1 = [affinity.scale(o,yfact=-1.5,origin=(0,0.35)),affinity.scale(o1,yfact=-1.5,origin=(0,0.35))]
 
 ##x: 0-28 | y: 0-22
 ##x: -0.7-0.7 | y: 0-0.7
 ##obs: 1(4,8) | 2(8,17) | 3(14,12) | 4(21,17) | 5(22,8)
 
-def intersects(point):
-    point = Points(point.y,point.x)
-    pointS = Points(shoulder_point_human.y,shoulder_point_human.x)
-    line = LineString([point,pointS])
-    output = False
-    for k in obstacles:
-        if line.intersects(k):
-            output = True
-    return output
-
 def callback(data):
-    if intersects(data):
-        publishing = Coordinates()
-        publishing.start_point = data
-        publishing.end_point = end_point_human
-        pub.publish(publishing)
-        time.sleep(1)
+    publishing = Coordinates()
+    publishing.start_point = data
+    publishing.end_point = end_point_human
+    pub.publish(publishing)
+    time.sleep(1)
 
 def main():
     rospy.Subscriber('camera_input',Point,callback)
