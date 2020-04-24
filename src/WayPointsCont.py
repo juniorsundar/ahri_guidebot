@@ -27,6 +27,8 @@ obs_h = 0.03
 o = Polygon([(0.3,0.3), (0.3,0.4), (0.1,0.4), (0.1,0.3)])
 o1 = Polygon([(-0.3,0.3), (-0.3,0.4), (-0.1,0.4), (-0.1,0.3)])
 obstacles = [affinity.scale(o,yfact=-2,origin=(0,0.35)),affinity.scale(o1,yfact=-2,origin=(0,0.35))]
+obstacles[0] = affinity.scale(obstacles[0],xfact = 2, origin=(0.2,0.35))
+obstacles[1] = affinity.scale(obstacles[1],xfact = 2, origin=(-0.2,0.35))
 
 ##x: 0-28 | y: 0-22
 ##x: -0.7-0.7 | y: 0-0.7
