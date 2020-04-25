@@ -25,24 +25,10 @@ quat = Quaternion(0.704238785359,0.709956638597,-0.00229009932359,0.002014932720
 start_point_robot = Point(0.0,0.0,0.1)
 start_point_human = Point(0.7,0,0.1)
 
-x = False #THIS VARIABLE DETERMINES IF A PLOT SHOULD BE MADE. IF TRUE THEN IT WILL USE A LOT OF COMPUTATION TIME SO ACTIVATE AT YOUR OWN RISK
-
-obs_c = np.array([[-0.5,0.25455],[-0.3,0.54091],[0,0.38182],[0.35,0.54091],[0.4,0.25455]])
-obs_w = 0.05
-obs_h = 0.03
-# o1 = Polygon([(obs_c[0][0]+obs_w,obs_c[0][1]+obs_h), (obs_c[0][0]+obs_w,obs_c[0][1]-obs_h), (obs_c[0][0]-obs_w,obs_c[0][1]-obs_h), (obs_c[0][0]-obs_w,obs_c[0][1]+obs_h)])
-# o2 = Polygon([(obs_c[1][0]+obs_w,obs_c[1][1]+obs_h), (obs_c[1][0]+obs_w,obs_c[1][1]-obs_h), (obs_c[1][0]-obs_w,obs_c[1][1]-obs_h), (obs_c[1][0]-obs_w,obs_c[1][1]+obs_h)])
-# o3 = Polygon([(obs_c[2][0]+obs_w,obs_c[2][1]+obs_h), (obs_c[2][0]+obs_w,obs_c[2][1]-obs_h), (obs_c[2][0]-obs_w,obs_c[2][1]-obs_h), (obs_c[2][0]-obs_w,obs_c[2][1]+obs_h)])
-# o4 = Polygon([(obs_c[3][0]+obs_w,obs_c[3][1]+obs_h), (obs_c[3][0]+obs_w,obs_c[3][1]-obs_h), (obs_c[3][0]-obs_w,obs_c[3][1]-obs_h), (obs_c[3][0]-obs_w,obs_c[3][1]+obs_h)])
-# o5 = Polygon([(obs_c[4][0]+obs_w,obs_c[4][1]+obs_h), (obs_c[4][0]+obs_w,obs_c[4][1]-obs_h), (obs_c[4][0]-obs_w,obs_c[4][1]-obs_h), (obs_c[4][0]-obs_w,obs_c[4][1]+obs_h)])
-#.45 .2  .2 -.5
+##HARDCODED OBSTACLES
 o = Polygon([(0.3,0.3), (0.3,0.4), (0.1,0.4), (0.1,0.3)])
 o1 = Polygon([(-0.3,0.3), (-0.3,0.4), (-0.1,0.4), (-0.1,0.3)])
-# obstacles = [affinity.scale(o1,yfact=-1,origin=(0,0.35)),affinity.scale(o2,yfact=-1,origin=(0,0.35)),affinity.scale(o3,yfact=-1,origin=(0,0.35)),affinity.scale(o4,yfact=-1,origin=(0,0.35)),affinity.scale(o5,yfact=-1,origin=(0,0.35))]
 obstacles = [affinity.scale(o,yfact=-1,origin=(0,0.35)),affinity.scale(o1,yfact=-1,origin=(0,0.35))]
-##x: 0-28 | y: 0-22
-##x: -0.7-0.7 | y: 0-0.7
-##obs: 1(4,8) | 2(8,17) | 3(14,12) | 4(21,17) | 5(22,8)
 
 class Node:
     def __init__(self,pose,angles):
@@ -159,6 +145,7 @@ def isInObstacle(newNode):
             isIn = True
     return isIn
 
+##OUR CONTRIBUTION
 def humanCost(current, neighbour):
     global graph, start_point_human, obstacles
     cost = False
@@ -256,7 +243,7 @@ def A_Star(start,goal):
             neighbour = graph2[ni]
 
             tentG = current.g + current.Node.eDist(neighbour.Node) 
-            if not humanCost(current, neighbour):
+            if not humanCost(current, neighbour): ##THIS IS THE EVALUATION OF WHETHER THE TRANSITION IS SAFE
                 if tentG < neighbour.g:
                     neighbour.previous = current
                     neighbour.g = tentG
@@ -298,17 +285,8 @@ def callback(data):
             g_limb.move_to_joint_positions(j.angles, timeout=2)
         b = datetime.datetime.now()
         print(b-a)
-        if True:
+        if True: ## CHANGE THIS TO FALSE IF YOU DON'T WANT THE NODE TO OUTPUT AN IMAGE OF THE WORKSPACE
             fig = plt.figure()
-            # for i in range(0,len(graph)):
-            #     if i == 0:
-            #         plt.scatter(graph[i].pose.position.x,graph[i].pose.position.y,c='g',marker='o')
-            #     else:
-            #         plt.scatter(graph[i].pose.position.x,graph[i].pose.position.y,c='r',marker='x')
-            #     for j in range(0,len(graph[i].neighbours)):
-            #         Lx = np.array([graph[i].pose.position.x,graph[graph[i].neighbours[j]].pose.position.x])
-            #         Ly = np.array([graph[i].pose.position.y,graph[graph[i].neighbours[j]].pose.position.y])
-            #         plt.plot(Lx,Ly,c='k')
             for i in range(1,len(A)):
                 Lx = np.array([A[i-1].pose.position.x,A[i].pose.position.x])
                 Ly = np.array([A[i-1].pose.position.y,A[i].pose.position.y])
