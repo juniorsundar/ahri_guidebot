@@ -33,4 +33,13 @@ You can change the obstacle position by modifying the hardcoded information in t
 You can change the shoulder position, human hand end position, human hand start position etc. by changing the hardcoded information in the Python files.
 
 ## Simulation using PyBullet
-TENZIN YOU CAN ADD YOUR PARTS HERE
+
+Clone https://github.com/cairo-robotics/cairo_simulator repo and follow instructions in the ReadMe.
+
+copy `src/collision_detection.py` from this repo into `cairo_simulator/src/` directory
+
+run the code with this command 
+
+```
+DISPLAY=:0 python collision_detection.py
+```
