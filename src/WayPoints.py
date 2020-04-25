@@ -20,10 +20,7 @@ start_point_robot = Point(0.0,0.0,0.1)
 shoulder_point_human = Point(0.7,0,0.1)
 end_point_human = Point()
 
-obs_c = np.array([[-0.5,0.25455],[-0.3,0.54091],[0,0.38182],[0.35,0.54091],[0.4,0.25455]])
-obs_w = 0.05
-obs_h = 0.03
-
+##HARDCODED OBSTACLES
 o = Polygon([(0.3,0.3), (0.3,0.4), (0.1,0.4), (0.1,0.3)])
 o1 = Polygon([(-0.3,0.3), (-0.3,0.4), (-0.1,0.4), (-0.1,0.3)])
 obstacles = [affinity.scale(o,yfact=-2,origin=(0,0.35)),affinity.scale(o1,yfact=-2,origin=(0,0.35))]
@@ -31,10 +28,6 @@ obstacles[0] = affinity.scale(obstacles[0],xfact = 2, origin=(0.2,0.35))
 obstacles[1] = affinity.scale(obstacles[1],xfact = 2, origin=(-0.2,0.35))
 
 obstacles1 = [affinity.scale(o,yfact=-1.5,origin=(0,0.35)),affinity.scale(o1,yfact=-1.5,origin=(0,0.35))]
-
-##x: 0-28 | y: 0-22
-##x: -0.7-0.7 | y: 0-0.7
-##obs: 1(4,8) | 2(8,17) | 3(14,12) | 4(21,17) | 5(22,8)
 
 def intersects(point):
     point = Points(point.y,point.x)
@@ -59,7 +52,5 @@ def main():
     rospy.spin()
 
 if __name__ == "__main__":
-    # print('Human destination coordinate')
-    # end_point_human = Point(float(raw_input('x: ')),float(raw_input('y: ')),float(raw_input('z: ')))
-    end_point_human = Point(0.1,-0.6,0.0)
+    end_point_human = Point(0.1,-0.6,0.0) ##CHANGE THIS TO MODIFY THE GOAL FOR THE HUMAN HAND
     main()
