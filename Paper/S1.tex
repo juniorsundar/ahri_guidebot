@@ -1,0 +1,19 @@
+\section{Introduction}
+% introduce the problem (explain the motivation: What is it? why solve it?)
+% talk about on-demand vs continuous and kinesthetic vs audio guidance
+% Hypothesis: What we are testing and what our expected outcome will be
+% what we did, breif summary (what you should expect in the report)
+There are millions of visually impaired people who are left to depend on other people for help or their guide dog and other resources. To help the visually impaired, in human robot interaction research area, many people have done research in kinesthetic guidance and many more are doing research to improve it to guide a visually impaired person through an obstacle populated environment. Most of the research aims to help a person through the environment from start to end goal. This does not give them independence. There are tools that people are using to help them through like walking stick. Methods researched so far are replacing the walking stick or guide dog. But we believe that the technology should be a tool that will give the person with visually impaired ability to navigate through environment independently as much as possible. Audio guidance could be one of the solution, but it is in the process of development. Therefore, we are proposing two methods of kinesthetic guidance in a controlled environment, which is a table with obstacles placed in different places in our case. In first method, we provide continuous guidance that will allow a person to hold on robot's hand and guide them from start to end goal. In second method, we provide on-demand guidance that will let a person to navigate in our environment independently and interfere when a person's arm enters a collision zone. Participant will experiment both methods and will fill form that will indicate which methods they prefer. We hypothesized that our participant will prefer on-demand guidance over continuous guidance.
+
+Our contribution to the human robot interaction is by adding human arm cost in the environment in kinesthetic guidance. 
+So far, most methods calculate cost and navigation path by considering robot's arm as the only agent in the environment. 
+In our continuous guidance, we do similar thing. 
+We assume human arm will follow same path as robot by holding onto robot's arm. 
+In on-demand guidance, human arm is moving independently until it enters collision zone. When human arm enters collision zone, robot arm will enter into the space and help human arm out of collision zone to the goal. 
+Now we have two agents in the environment. This add complication. We discuss that in details in Methods section. 
+
+The application domain of our algorithm is as follows. 
+Consider a visually-impaired person, searching for an object in a familiar space, but with obstacles whose positions are initially unknown. 
+While the individual is confident in moving through this space, they will require intermittent assistance to avoid collisions with obstacles. 
+In this situation, we predict that the individual will not require continuous `hand-holding' help and would prefer a greater degree of freedom, while infrequently falling back to assistance from a third-party. 
+In our case, we are limiting the workspace to two-dimensions, and expect to extend it to three-dimensions in future works. 

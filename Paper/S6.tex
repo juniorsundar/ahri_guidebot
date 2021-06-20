@@ -1,0 +1,27 @@
+\section{Discussion}
+Due to unable to perform experiment with participants, it results in no data for subjective metrics, and insufficient or indescriptive data for the objective metrics. 
+Without an experiment with live subjects we could not obtain sufficient data to derive a conclusion. 
+Hence we were unable to properly evaluate our hypotheses. 
+Although we were able to develop a motion planner that satisfies the requirements of the problem, we could not go beyond a superficial evaluation of its effectiveness. 
+We also could not completely tailor the experiment such that it could be properly evaluated in a simulated environment. 
+This was since the investigation was highly reliant on the human component, and their reliance on robot for guidance. 
+
+One area for improvement with the motion planning algorithm would be to consider the human arm's ability to pivot at the elbow. 
+If we consider this property, the stringency of the cost function can be reduced, which will allow the guidance to extend further. 
+Furthermore, we also could improve the guidance strategy by implementing ways to incorporate audio cues and warnings. 
+In this experiment, the audio interruptions were provided by the researchers. 
+We also did not consider arm comfort in the motion plan. 
+This is especially important when the human could use either their left or right arm. 
+Depending on that, the human arm will have preferable configurations and range of motions that should be considered.
+
+The investigation could be further improved by considering a three-dimensional workspace to make it more realistic and add to the complexity. 
+In addition to this, we could also consider an improved method of sampling the workspace. 
+The current strategy to randomly sample the workspace and find robot configuration through the IK solver was found to be inefficient, and it also resulted in blind spots in the workspace (as the robot could not configure itself to reach those regions). 
+
+We are leaving subjective metrics as guideline for future work. 
+In the future, we can take existing work that we have completed so far, and implement the experiment in the lab. 
+We hope to improve the algorithm and finally test it with visually-impaired subjects to gain accurate primary data. 
+
+%areas for improvement
+%possible extensions to the project
+% how can someone do this experiment in the future. 
